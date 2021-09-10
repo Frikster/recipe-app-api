@@ -7,3 +7,6 @@ test:
 
 migrate:
 	docker-compose run app sh -c "python manage.py makemigrations core"
+
+build:
+	docker-compose build
