@@ -1,6 +1,9 @@
 [flake8]
+# PEP-8 says "it is okay to increase the line length limit up to 99 characters"
+max-line-length = 99
 exclude =
   migrations,
   __pycache__,
   manage.py,
   settings.py
+
