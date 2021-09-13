@@ -1,12 +1,11 @@
-from rest_framework.authentication import TokenAuthentication
-from rest_framework.permissions import IsAuthenticated
-
 from core.models import Tag, Ingredient, Recipe
-
+from django.db.models import Q
 from recipe import serializers
-from rest_framework.decorators import action
-from rest_framework.response import Response
 from rest_framework import viewsets, mixins, status
+from rest_framework.authentication import TokenAuthentication
+from rest_framework.decorators import action
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
 
 
 class BaseRecipeAttrViewSet(viewsets.GenericViewSet,
@@ -44,9 +43,24 @@ class RecipeViewSet(viewsets.ModelViewSet):
     authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAuthenticated,)
 
+    def _params_to_ints(self, qs):
+        """Convert a list of string IDs to a list of integers"""
+        return [int(str_id) for str_id in qs.split(',')]
+
     def get_queryset(self):
-        """Retrieve the recipes for the authenticated user"""
-        return self.queryset.filter(user=self.request.user)
+        """Retrieve recipes for the authenticated user"""
+        tags = self.request.query_params.get("tags")
+        ingredients = self.request.query_params.get("ingredients")
+        queryset = self.queryset
+        filters = Q(user=self.request.user)
+        if tags:
+            tag_ids = self._params_to_ints(tags)
+            filters &= Q(tags__id__in=tag_ids)
+        if ingredients:
+            ingredient_ids = self._params_to_ints(ingredients)
+            filters &= Q(ingredients__id__in=ingredient_ids)
+
+        return queryset.filter(filters).distinct()
 
     def get_serializer_class(self):
         """Return appropriate serializer class"""
